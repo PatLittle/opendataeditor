@@ -15,37 +15,41 @@ if ! pgrep -x xfce4-session >/dev/null; then
   sleep 3
 fi
 
-# Ensure app exists
-if [ ! -f "$APP_DIR/pyproject.toml" ] && [ ! -f "$APP_DIR/setup.cfg" ] && [ ! -f "$APP_DIR/requirements.txt" ]; then
-  echo "[startup] ERROR: Could not find ODE source at $APP_DIR"
-  exit 1
-fi
-
 # Activate venv
 if [ -f "$VENV_DIR/bin/activate" ]; then
+  # shellcheck disable=SC1090
   source "$VENV_DIR/bin/activate"
 else
   echo "[startup] ERROR: venv not found at $VENV_DIR"
   exit 1
 fi
 
+# Run from source by adding repo to PYTHONPATH (do NOT pip-install the project)
+export PYTHONPATH="$APP_DIR:${PYTHONPATH:-}"
+
 cd "$APP_DIR"
 
-# Try to run ODE from source first.
-# Common entry patterns:
-#   - python -m ode
-#   - python -m opendataeditor
-#   - python path/to/main.py
+# Try common entry points
 RUN_OK=0
-echo "[startup] Trying to launch ODE from source…"
+echo "[startup] Attempting to start ODE from source…"
 
-if python -c "import ode" 2>/dev/null; then
+# 1) python -m ode (preferred if package dir is 'ode/')
+if [ -d "$APP_DIR/ode" ]; then
   (python -m ode >/tmp/ode.log 2>&1 &) && RUN_OK=1
-elif python -c "import opendataeditor" 2>/dev/null; then
-  (python -m opendataeditor >/tmp/ode.log 2>&1 &) && RUN_OK=1
-elif [ -f "build.py" ]; then
-  echo "[startup] Could not import module; trying packaged build via build.py"
-  # Build a distributable, then run the generated binary (as in create-deb.sh)
+fi
+
+# 2) If there is a top-level launcher script (e.g., main.py/app.py), try it
+if [ "$RUN_OK" -ne 1 ]; then
+  for CAND in main.py app.py run.py; do
+    if [ -f "$CAND" ]; then
+      (python "$CAND" >/tmp/ode.log 2>&1 &) && RUN_OK=1 && break
+    fi
+  done
+fi
+
+# 3) As a last resort, build a one-folder binary and run it
+if [ "$RUN_OK" -ne 1 ] && [ -f "build.py" ]; then
+  echo "[startup] Falling back to build.py → running packaged app…"
   python build.py >/tmp/ode-build.log 2>&1 || true
   if [ -x "dist/opendataeditor/opendataeditor" ]; then
     (./dist/opendataeditor/opendataeditor >/tmp/ode.log 2>&1 &) && RUN_OK=1
@@ -53,17 +57,9 @@ elif [ -f "build.py" ]; then
 fi
 
 if [ "$RUN_OK" -ne 1 ]; then
-  echo "[startup] Fallback: try to run any 'main.py' under project root"
-  if [ -f "main.py" ]; then
-    (python main.py >/tmp/ode.log 2>&1 &) && RUN_OK=1
-  fi
+  echo "[startup] ERROR: Could not start ODE. Check /tmp/ode.log and /tmp/ode-build.log"
 fi
 
-if [ "$RUN_OK" -ne 1 ]; then
-  echo "[startup] ERROR: Could not start ODE. Check logs: /tmp/ode-build.log, /tmp/ode.log"
-  # Keep the session alive so noVNC still works for debugging
-fi
-
-echo "[startup] ODE should be starting. Tail follows:"
+echo "[startup] Tail ODE log:"
 touch /tmp/ode.log
 tail -f /tmp/ode.log
