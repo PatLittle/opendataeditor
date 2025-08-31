@@ -1,8 +1,17 @@
 {
-  "name": "ode-demo",
+  "name": "Open Data Editor – Live Demo",
   "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "vscode",
   "forwardPorts": [6080],
-  "portsAttributes": { "6080": { "label": "noVNC", "onAutoForward": "openBrowser" } },
+  "portsAttributes": {
+    "6080": {
+      "label": "Open Data Editor (noVNC)",
+      "onAutoForward": "openBrowser"
+    }
+  },
   "postCreateCommand": "bash /opt/startup/bootstrap.sh",
-  "remoteUser": "vscode"
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {}
+  }
 }
