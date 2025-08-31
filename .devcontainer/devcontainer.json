@@ -1,0 +1,8 @@
+{
+  "name": "ode-demo",
+  "build": { "dockerfile": "Dockerfile" },
+  "forwardPorts": [6080],
+  "portsAttributes": { "6080": { "label": "noVNC", "onAutoForward": "openBrowser" } },
+  "postCreateCommand": "bash /opt/startup/bootstrap.sh",
+  "remoteUser": "vscode"
+}
