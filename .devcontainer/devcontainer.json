@@ -1,5 +1,5 @@
 {
-  "name": "Open Data Editor – Live Demo",
+  "name": "Open Data Editor – Live Demo (PyQt)",
   "build": { "dockerfile": "Dockerfile" },
   "remoteUser": "vscode",
 
