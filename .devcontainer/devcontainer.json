@@ -2,6 +2,7 @@
   "name": "Open Data Editor – Live Demo",
   "build": { "dockerfile": "Dockerfile" },
   "remoteUser": "vscode",
+
   "forwardPorts": [6080],
   "portsAttributes": {
     "6080": {
@@ -9,7 +10,9 @@
       "onAutoForward": "openBrowser"
     }
   },
+
   "postCreateCommand": "bash /opt/startup/bootstrap.sh",
+
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/common-utils:2": {}
